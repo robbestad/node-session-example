@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<head>
+    <title>Session Example</title>
+</head>
+<body>
+<h1>Login / Logout</h1>
+<div id="loginStatus"></div>
+<div id="logoutCounter"></div>
+<div>
+    <form id="login" action="/login" method="POST">
+        <button type="submit">Login</button>
+    </form>
+    <form id="logout" action="/logout" method="POST">
+        <button type="submit">Logout</button>
+    </form>
+    <div>
+        <pre id="hiddenMessage"></pre>
+        <button onclick="showHiddenMessage()">Show hidden content</button>
+    </div>
+</div>
+<script type="text/javascript">
+	let counter = 60;
+	let timer;
+
+	function showHiddenMessage() {
+		fetch("/hiddenmessage")
+			.then(response => {
+				if (response.status === 401) {
+					document.querySelector("#hiddenMessage").textContent = "You must log in to see this message";
+				} else {
+					response.text()
+						.then(text => {
+							document.querySelector("#hiddenMessage").textContent = text;
+						})
+				}
+			})
+	}
+
+	function startInterval(counter) {
+		return setInterval(() => {
+			if (counter > 1) {
+				--counter;
+				document.querySelector("#logoutCounter").textContent = `${counter} seconds to idle logout`;
+			} else {
+				fetch("/logout", {method: "POST"})
+					.then(() => {
+						document.querySelector("#logout").submit()
+					})
+			}
+		}, 1000);
+	}
+
+	fetch("/session")
+		.then(result => result.json())
+		.then(() => {
+			counter = 60;
+			timer = startInterval(counter);
+			document.querySelector("#logoutCounter").textContent = `${counter} seconds to idle logout`;
+			document.querySelector("#loginStatus").textContent = "You are logged in";
+			document.querySelector("#logout").style.display = "block";
+			document.querySelector("#login").style.display = "none";
+		})
+		.catch(() => {
+			clearInterval(timer);
+			document.querySelector("#loginStatus").textContent = "You are not logged in";
+			document.querySelector("#logout").style.display = "none";
+			document.querySelector("#login").style.display = "block";
+		});
+
+</script>
+</body>
